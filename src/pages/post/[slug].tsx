@@ -147,13 +147,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       author: response.data.author,
 
       content: response.data.content.map(item => {
-        //        item.text = RichText.asText(item.body);
+        //item.text = RichText.asText(item.body);
         item.body = RichText.asHtml(item.body);
         return item;
       })
     }
   }
-  console.log(post);
 
   return {
     props: {
