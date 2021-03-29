@@ -1,4 +1,18 @@
-.postContainer{
+.banner {
+    width: 100%;
+    left: 0;
+    position: absolute;
+    height: 400px;
+
+    img {
+        width: 100%;
+        height: 400px;
+    }
+}
+
+.postContainer {
+
+
     h1 {
         font-size: 3rem;
         font-style: normal;

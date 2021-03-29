@@ -44,7 +44,6 @@ export default function Home(props: HomeProps) {
       return;
     }
 
-    console.log('carregar outra página');
     const response = fetch(urlNextPage)
       .then(response => response.json())
       .then(data => {
@@ -75,14 +74,20 @@ export default function Home(props: HomeProps) {
 
         {posts.map(post => (
           <article key={post.uid} className={styles.postSummary}>
-            <a href={`/post/${post.uid}`}>{post.data.title}</a>
-            <h2>{post.data.subtitle}</h2>
-            <p>
-              <FiCalendar className={commonStyles.icon} />
-              {post.first_publication_date}
-              <FiUser className={commonStyles.icon} />
-              {post.data.author}
-            </p>
+            <a href={`/post/${post.uid}`}><h1>{post.data.title}</h1>
+              <h2>{post.data.subtitle}</h2>
+              <p>
+                <FiCalendar className={commonStyles.icon} />
+                {format(
+                  new Date(post.first_publication_date),
+                  "d MMM yyyy",
+                  {
+                    locale: ptBR,
+                  }
+                )}
+                <FiUser className={commonStyles.icon} />
+                {post.data.author}
+              </p></a>
           </article>
         ))}
 
@@ -109,7 +114,7 @@ export const getStaticProps: GetStaticProps = async () => {
     Prismic.predicates.at('document.type', 'post')],
     {
       fetch: ['post.title', 'post.subtitle', 'post.author', 'post.last_publication_date'],
-      pageSize: 1,
+      pageSize: 2,
       page: 1
     }
   );
@@ -118,13 +123,7 @@ export const getStaticProps: GetStaticProps = async () => {
     return {
       uid: post.uid,
 
-      first_publication_date: format(
-        new Date(post.first_publication_date),
-        "d MMM yyyy",
-        {
-          locale: ptBR,
-        }
-      ),
+      first_publication_date: post.first_publication_date,
 
       data: {
         title: post.data.title,
