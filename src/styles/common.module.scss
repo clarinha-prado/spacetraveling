@@ -5,7 +5,7 @@
     height: calc(100vh);
 
     display: flex;
-    align-items: center;  /* vertical */
+    align-items: flex-start;  /* vertical */
     justify-content: left;   /* horizontal */
     flex-direction: column;
 

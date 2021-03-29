@@ -1,11 +1,15 @@
 import { GetStaticProps } from 'next';
 
 import { getPrismicClient } from '../services/prismic';
+import Prismic from '@prismicio/client';
 
 import commonStyles from '../styles/common.module.scss';
 import styles from './home.module.scss';
 import { FiCalendar, FiUser } from 'react-icons/fi'
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import Header from '../components/Header';
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
 
 interface Post {
   uid?: string;
@@ -26,59 +30,117 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home() {
+export default function Home(props: HomeProps) {
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [urlNextPage, setUrlNextPage] = useState("");
+
+  useEffect(() => {
+    setPosts(props.postsPagination.results.slice());
+    setUrlNextPage(props.postsPagination.next_page);
+  }, []);
+
+  function handleClick() {
+    if (!urlNextPage) {
+      return;
+    }
+
+    console.log('carregar outra página');
+    const response = fetch(urlNextPage)
+      .then(response => response.json())
+      .then(data => {
+
+        setUrlNextPage(data.next_page);
+
+        data.results.map((item) => {
+          item.first_publication_date = format(
+            new Date(item.first_publication_date),
+            "d MMM yyyy",
+            {
+              locale: ptBR,
+            }
+          );
+        })
+
+        setPosts(data.results);
+      });
+
+
+  }
+
   return (
+
     <main className={commonStyles.container}>
-      <header>
-        <img src="/Logo.svg" alt="logo" />
-      </header>
+      <Header />
       <section>
 
-        <article className={styles.postSummary}>
-          <a href="/post/1">Quem vencerá a corrida?</a>
-          <h2>Um exemplo clássico para apresentar o conceito de limite em matemática é a corrida hipotética entre um coelho e uma tartaruga.</h2>
-          <p>
-            <FiCalendar className={commonStyles.icon} />
-            10 de outubro de 2021
-            <FiUser className={commonStyles.icon} />
-            Autor da Silva
-          </p>
-        </article>
+        {posts.map(post => (
+          <article key={post.uid} className={styles.postSummary}>
+            <a href={`/post/${post.uid}`}>{post.data.title}</a>
+            <h2>{post.data.subtitle}</h2>
+            <p>
+              <FiCalendar className={commonStyles.icon} />
+              {post.first_publication_date}
+              <FiUser className={commonStyles.icon} />
+              {post.data.author}
+            </p>
+          </article>
+        ))}
 
-        <article className={styles.postSummary}>
-          <a href="/post/1">Quem vencerá a corrida?</a>
-          <h2>Um exemplo clássico para apresentar o conceito de limite em matemática é a corrida hipotética entre um coelho e uma tartaruga.</h2>
-          <p>
-            <FiCalendar className={commonStyles.icon} />
-            10 de outubro de 2021
-            <FiUser className={commonStyles.icon} />
-            Autor da Silva
-          </p>
-        </article>
+        {urlNextPage ? (
+          <button
+            type="button"
+            className={styles.nextPage}
+            onClick={() => handleClick()}
+          >
+            Carregar mais posts
+          </button>
 
-        <article className={styles.postSummary}>
-          <a href="/post/1">Quem vencerá a corrida?</a>
-          <h2>Um exemplo clássico para apresentar o conceito de limite em matemática é a corrida hipotética entre um coelho e uma tartaruga.</h2>
-          <p>
-            <FiCalendar className={commonStyles.icon} />
-            10 de outubro de 2021
-            <FiUser className={commonStyles.icon} />
-            Autor da Silva
-          </p>
-        </article>
-
-        <Link href="/">
-          <a className={styles.nextPage}>Carregar mais posts</a>
-        </Link>
-
+        ) : ''}
       </section>
     </main>
   );
 }
 
-// export const getStaticProps = async () => {
-//   // const prismic = getPrismicClient();
-//   // const postsResponse = await prismic.query(TODO);
+export const getStaticProps: GetStaticProps = async () => {
 
-//   // TODO
-// };
+  const prismic = getPrismicClient();
+
+  const postResponse = await prismic.query([
+    Prismic.predicates.at('document.type', 'post')],
+    {
+      fetch: ['post.title', 'post.subtitle', 'post.author', 'post.last_publication_date'],
+      pageSize: 1,
+      page: 1
+    }
+  );
+
+  const posts = postResponse.results.map(post => {
+    return {
+      uid: post.uid,
+
+      first_publication_date: format(
+        new Date(post.first_publication_date),
+        "d MMM yyyy",
+        {
+          locale: ptBR,
+        }
+      ),
+
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      }
+    };
+  });
+
+  return {
+    props: {
+      postsPagination: {
+        next_page: postResponse.next_page,
+        results: posts
+      }
+    },
+    revalidate: 60 * 60 * 24 // 1 dia
+  }
+};
