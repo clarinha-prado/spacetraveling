@@ -35,6 +35,20 @@ export default function Home(props: HomeProps) {
   const [urlNextPage, setUrlNextPage] = useState("");
 
   useEffect(() => {
+
+    props.postsPagination.results.map((post) => {
+      Object.defineProperty(post, 'formatedDate', {
+        value:
+          format(
+            new Date(post.first_publication_date),
+            "d MMM yyyy",
+            {
+              locale: ptBR,
+            }
+          )
+      });
+    });
+
     setPosts(props.postsPagination.results.slice());
     setUrlNextPage(props.postsPagination.next_page);
   }, []);
@@ -44,21 +58,24 @@ export default function Home(props: HomeProps) {
       return;
     }
 
-    const response = fetch(urlNextPage)
+    fetch(urlNextPage)
       .then(response => response.json())
       .then(data => {
 
         setUrlNextPage(data.next_page);
 
-        data.results.map((item) => {
-          item.first_publication_date = format(
-            new Date(item.first_publication_date),
-            "d MMM yyyy",
-            {
-              locale: ptBR,
-            }
-          );
-        })
+        data.results.map((post: Post) => {
+          Object.defineProperty(post, 'formatedDate', {
+            value:
+              format(
+                new Date(post.first_publication_date),
+                "d MMM yyyy",
+                {
+                  locale: ptBR,
+                }
+              )
+          });
+        });
 
         setPosts(data.results);
       });
@@ -78,13 +95,7 @@ export default function Home(props: HomeProps) {
               <h2>{post.data.subtitle}</h2>
               <p>
                 <FiCalendar className={commonStyles.icon} />
-                {format(
-                  new Date(post.first_publication_date),
-                  "d MMM yyyy",
-                  {
-                    locale: ptBR,
-                  }
-                )}
+                {post["formatedDate"]}
                 <FiUser className={commonStyles.icon} />
                 {post.data.author}
               </p></a>
