@@ -42,6 +42,18 @@ export default function Post(props: PostProps) {
     return <div>Carregando...</div>
   }
 
+  Object.defineProperty(props.post, 'formatedDate', {
+    value:
+      format(
+        new Date(props.post.first_publication_date),
+        "d MMM yyyy",
+        {
+          locale: ptBR,
+        }
+      )
+  });
+
+
   function calcularTempoLeitura(content: Post["data"]["content"]) {
 
     let qtdPalavras = content.reduce((acc, item) => {
@@ -68,13 +80,7 @@ export default function Post(props: PostProps) {
 
         <p>
           <FiCalendar className={commonStyles.icon} />
-          {format(
-            new Date(props.post.first_publication_date),
-            "d MMM yyyy",
-            {
-              locale: ptBR,
-            }
-          )}
+          {props.post["formatedDate"]}
           <FiUser className={commonStyles.icon} />
           {props.post.data.author}
           <FiClock className={commonStyles.icon} />
