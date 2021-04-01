@@ -42,29 +42,54 @@ export default function Post(props: PostProps) {
     return <div>Carregando...</div>
   }
 
-  Object.defineProperty(props.post, 'formatedDate', {
-    value:
-      format(
-        new Date(props.post.first_publication_date),
-        "d MMM yyyy",
-        {
-          locale: ptBR,
-        }
-      )
-  });
+  // formatar post retornado
+  const post = {
 
+    first_publication_date: props.post.first_publication_date,
+
+    data: {
+      title: props.post.data.title,
+      banner: props.post.data.banner,
+      author: props.post.data.author,
+
+      content: props.post.data.content.map(item => {
+        //item.text = RichText.asText(item.body);
+        item["formatedText"] = RichText.asHtml(item.body);
+        return item;
+      })
+    }
+  }
+
+  post.first_publication_date = format(
+    new Date(post.first_publication_date),
+    "d MMM yyyy",
+    {
+      locale: ptBR,
+    }
+  );
 
   function calcularTempoLeitura(content: Post["data"]["content"]) {
 
-    let qtdPalavras = content.reduce((acc, item) => {
+    const qtdPalavras = content.reduce((acc, item) => {
+
       if (!acc["soma"]) {
         acc["soma"] = 0;
       }
       acc["soma"] = (item["heading"].split(" ").length) + acc["soma"];
-      acc["soma"] = (item["body"].toString().split(" ").length) + acc["soma"];
+      // acc["soma"] = (item["body"].toString().split(" ").length) + acc["soma"];
+      let qtdPalavrasBody = item["body"].reduce((acc2, subitem) => {
+
+        if (!acc2["soma"]) {
+          acc2["soma"] = 0;
+        }
+        acc2["soma"] = (subitem["text"].split(" ").length) + acc2["soma"];
+        return acc2;
+      }, {});
+      acc["soma"] = Number(acc["soma"]) + qtdPalavrasBody["soma"];
 
       return acc;
-    }, {})
+    }, {});
+
     return Math.ceil(qtdPalavras["soma"] / 200);
   }
 
@@ -73,27 +98,33 @@ export default function Post(props: PostProps) {
       <Header />
       <section className={styles.postContainer}>
         <div className={styles.banner}>
-          <img src={props.post.data.banner.url} alt={props.post.data.title} />
+          <img src={post.data.banner.url} alt={post.data.title} />
         </div>
-        <div style={{ height: "400px", position: "relative", marginBottom: "80px" }}></div>
-        <h1>{props.post.data.title}</h1>
+        <div className={styles.preventOverlap}></div>
+        <h1>{post.data.title}</h1>
 
         <p>
           <FiCalendar className={commonStyles.icon} />
-          {props.post["formatedDate"]}
+          <span style={{ textTransform: 'capitalize' }}>
+            {post.first_publication_date}
+          </span>
           <FiUser className={commonStyles.icon} />
-          {props.post.data.author}
+          <span style={{ textTransform: 'capitalize' }}>
+            {post.data.author}
+          </span>
           <FiClock className={commonStyles.icon} />
-          {`${calcularTempoLeitura(props.post.data.content)} min`}
+          <span>
+            {`${calcularTempoLeitura(post.data.content)} min`}
+          </span>
         </p>
 
         <div className={styles.postContent}>
-          {props.post.data.content.map(item => (
+          {post.data.content.map(item => (
             <div key={item.heading}>
               <header>
                 {item.heading}
               </header>
-              <div dangerouslySetInnerHTML={{ __html: item.body.toString() }} />
+              <div dangerouslySetInnerHTML={{ __html: item["formatedText"] }} />
             </div>
           ))}
         </div>
@@ -102,55 +133,62 @@ export default function Post(props: PostProps) {
   );
 }
 
+
 // This function gets called at build time
-export const getStaticPaths = async () => {
-  return {
-    // Only `/posts/1` and `/posts/2` are generated at build time
-    paths: [{ params: { slug: 'joana-darc' } }],
-    // Enable statically generating additional pages
-    // For example: `/posts/3`
-    fallback: true,
-  }
+export async function getStaticPaths() {
+  // Call an external API endpoint to get posts
+  const prismic = getPrismicClient();
+
+  const posts = await prismic.query([
+    Prismic.predicates.at('document.type', 'post')],
+    {
+      fetch: ['post.uid'],
+    }
+  );
+
+  // Get the paths we want to pre-render based on posts
+  const paths = posts.results.map((post) => ({
+    params: { slug: post.uid },
+  }))
+
+  return { paths, fallback: true }
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { slug } = params;
 
-  const x = await getStaticPaths();
+  // const x = await getStaticPaths();
 
-  const staticPages = x.paths.find((item) => {
-    return item.params.slug === slug;
-  });
+  // const staticPages = x.paths.find(item => {
+  //   return item.params.slug === slug;
+  // });
 
   let response;
   const prismic = getPrismicClient();
 
-  if (staticPages === undefined) {
+  // if (staticPages === undefined) {
 
-    const response1 = await prismic.query([
-      Prismic.Predicates.at("my.post.uid", slug)]
-    );
-    response = response1.results[0];
+  //   const response1 = await prismic.query([
+  //     Prismic.Predicates.at("my.post.uid", slug)]
+  //   );
+  //   response = response1.results[0];
 
-  } else {
-    response = await prismic.getByUID('post', String(slug), {});
-  }
+  // } else {
+  response = await prismic.getByUID('post', String(slug), {});
+  // }
 
-  // formatar post retornado
   const post = {
 
     first_publication_date: response.first_publication_date,
+    ...response,
 
     data: {
+      ...response.data,
       title: response.data.title,
       banner: response.data.banner,
       author: response.data.author,
 
-      content: response.data.content.map(item => {
-        //item.text = RichText.asText(item.body);
-        item.body = RichText.asHtml(item.body);
-        return item;
-      })
+      content: response.data.content
     }
   }
 

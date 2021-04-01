@@ -10,6 +10,27 @@
     }
 }
 
+.preventOverlap {
+    height: 400px;
+    position: relative; 
+    margin-bottom: 80px;  
+}
+
+
+@media (max-width: 720px) {
+    .banner {
+        height: 200px;
+    
+        img {
+            height: 200px;
+        }
+    }
+
+    .preventOverlap {
+        height: 200px; 
+    }
+}
+
 .postContainer {
 
 

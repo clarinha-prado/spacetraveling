@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import Header from '../components/Header';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
+import Link from 'next/link';
 
 interface Post {
   uid?: string;
@@ -91,14 +92,18 @@ export default function Home(props: HomeProps) {
 
         {posts.map(post => (
           <article key={post.uid} className={styles.postSummary}>
-            <a href={`/post/${post.uid}`}><h1>{post.data.title}</h1>
-              <h2>{post.data.subtitle}</h2>
-              <p>
-                <FiCalendar className={commonStyles.icon} />
+            <Link href={`/post/${post.uid}`}>
+              <a><h1>{post.data.title}</h1>
+                <h2>{post.data.subtitle}</h2>
+              </a></Link>
+            <p>
+              <FiCalendar className={commonStyles.icon} />
+              <span style={{ textTransform: 'capitalize' }}>
                 {post["formatedDate"]}
-                <FiUser className={commonStyles.icon} />
-                {post.data.author}
-              </p></a>
+              </span>
+              <FiUser className={commonStyles.icon} />
+              {post.data.author}
+            </p>
           </article>
         ))}
 
