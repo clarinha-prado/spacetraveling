@@ -2,7 +2,6 @@ import { GetStaticPaths, GetStaticProps } from 'next';
 
 import { getPrismicClient } from '../../services/prismic';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
-import Comentarios from '../../components/Comentarios';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
@@ -14,7 +13,6 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Prismic from '@prismicio/client';
 import { useEffect, useState, MouseEvent, useRef } from 'react';
-import Utter from '../../components/Utter';
 
 interface Post {
   first_publication_date: string | null;
@@ -45,7 +43,7 @@ interface PostProps {
 
 export default function Post(props: PostProps) {
 
-  const [currPage, setCurrPage] = useState('');
+  //const [currPage, setCurrPage] = useState('');
 
   // If the page is not yet generated, this will be displayed
   // initially until getStaticProps() finishes running
@@ -85,50 +83,88 @@ export default function Post(props: PostProps) {
     }
   );
 
-  post.last_publication_date = format(
+  post.last_publication_date = post.last_publication_date ? format(
     new Date(post.last_publication_date),
     "d MMM yyyy', às' HH:mm",
     {
       locale: ptBR,
     }
-  );
+  ) : '';
 
-  function Utterances() {
-    const utter = useRef<HTMLDivElement>();
+  // function Utterances() {
+  //   const utter = useRef<HTMLDivElement>();
+
+  //   useEffect(() => {
+  //     if (utter) {
+  //       utter.current.removeChild;
+  //       const script = document.createElement('script');
+  //       script.setAttribute("src", "https://utteranc.es/client.js");
+  //       script.setAttribute("crossorigin", "anonymous");
+  //       script.setAttribute("async", "true");
+  //       script.setAttribute("repo", "clarinha-prado/spacetraveling-comments");
+  //       script.setAttribute("issue-term", "pathname");
+  //       script.setAttribute("theme", "photon-dark");
+  //       utter.current.appendChild(script);
+  //     }
+  //   }, []);
+
+  //   return <div ref={utter} />;
+  // }
+
+  const addUtterancesScript = (
+    parentElement,
+    label,
+    issueTerm,
+    isIssueNumber
+  ): void => {
+    console.log("\nlabel: " + label + " issueTerm: " + issueTerm + " isIssueNumber: ", isIssueNumber);
+    const script = document.createElement('script');
+    script.setAttribute('src', 'https://utteranc.es/client.js');
+    script.setAttribute('crossorigin', 'anonymous');
+    script.setAttribute('async', 'true');
+    script.setAttribute('repo', "clarinha-prado/spacetraveling-comments");
+    if (label !== '') {
+      script.setAttribute('label', label);
+    }
+
+    if (isIssueNumber) {
+      script.setAttribute('issue-number', issueTerm);
+    } else {
+      script.setAttribute('issue-term', issueTerm);
+    }
+
+    script.setAttribute('theme', "photon-dark");
+
+    parentElement.appendChild(script);
+  };
+
+  function Utterances(): JSX.Element {
+    const issueTerm = 'pathname';
+    const label = 'blog-comment';
 
     useEffect(() => {
-      if (utter) {
-        utter.current.removeChild;
-        const script = document.createElement('script');
-        script.setAttribute("src", "https://utteranc.es/client.js");
-        script.setAttribute("crossorigin", "anonymous");
-        script.setAttribute("async", "true");
-        script.setAttribute("repo", "clarinha-prado/spacetraveling-comments");
-        script.setAttribute("issue-term", "pathname");
-        script.setAttribute("theme", "photon-dark");
-        utter.current.appendChild(script);
+      // Get comments box
+      const commentsBox = document.getElementById('commentsBox');
+
+      // Check if comments box is loaded
+      if (!commentsBox) {
+        return;
       }
-    }, []);
 
-    return <div ref={utter} />;
+      // Get utterances
+      const utterances = document.getElementsByClassName('utterances')[0];
+
+      // Remove utterances if it exists
+      if (utterances) {
+        utterances.remove();
+      }
+
+      // Add utterances script
+      addUtterancesScript(commentsBox, label, issueTerm, false);
+    });
+
+    return <div id="commentsBox" />;
   }
-  /*   
-    useEffect(() => {
-      var container = document.getElementById("inject-comments-for-utterances");
-      var content = container.innerHTML;
-      container.innerHTML = content;
-  
-      // inclui uterance
-      let script = document.createElement("script");
-      let anchor = document.getElementById("inject-comments-for-utterances");
-      script.setAttribute("src", "https://utteranc.es/client.js");
-      script.setAttribute("crossorigin", "anonymous");
-      script.setAttribute("async", "true");
-      script.setAttribute("repo", "clarinha-prado/spacetraveling-comments");
-      script.setAttribute("issue-term", "pathname");
-      script.setAttribute("theme", "photon-dark");
-      anchor.appendChild(script);
-    }, [currPage]); */
 
   function calcularTempoLeitura(content: Post["data"]["content"]) {
 
@@ -156,13 +192,6 @@ export default function Post(props: PostProps) {
     return Math.ceil(qtdPalavras["soma"] / 200);
   }
 
-  function handleClickNext(event: MouseEvent) {
-    setCurrPage(post.nextSlug);
-  }
-  function handleClickPrev(event: MouseEvent) {
-    setCurrPage(post.prevSlug);
-  }
-
   return (
     <>
       <div className={styles.divHeader}>
@@ -178,11 +207,13 @@ export default function Post(props: PostProps) {
 
           <p>
             <FiCalendar className={commonStyles.icon} />
-            <span style={{ textTransform: 'capitalize' }}>
+            {/* <span style={{ textTransform: 'capitalize' }}> */}
+            <span>
               {post.first_publication_date}
             </span>
             <FiUser className={commonStyles.icon} />
-            <span style={{ textTransform: 'capitalize' }}>
+            {/* <span style={{ textTransform: 'capitalize' }}> */}
+            <span>
               {post.data.author}
             </span>
             <FiClock className={commonStyles.icon} />
@@ -191,7 +222,7 @@ export default function Post(props: PostProps) {
             </span>
           </p>
           <p className={styles.modifiedDate}>
-            * editado em {post.last_publication_date}
+            * editado em {post.last_publication_date ? post.last_publication_date : ''}
           </p>
 
           <div className={styles.postContent}>
@@ -210,12 +241,11 @@ export default function Post(props: PostProps) {
             <div>
               <p>{post.prevTitle}</p>
 
-              {post.prevSlug === '' ? '' :
+              {!post.prevSlug ? '' :
                 <Link href={`/post/${post.prevSlug}`}>
                   <a><button
                     type="button"
                     className={styles.nextPage}
-                    onClick={(e) => handleClickPrev(e)}
                   >
                     Post anterior
               </button></a>
@@ -231,12 +261,11 @@ export default function Post(props: PostProps) {
             >
               <p>{post.nextTitle}</p>
 
-              {post.nextSlug === '' ? '' :
+              {!post.nextSlug ? '' :
                 <Link href={`/post/${post.nextSlug}`}>
                   <a><button
                     type="button"
                     className={styles.nextPage}
-                    onClick={(e) => handleClickNext(e)}
                   >
                     Próximo post
                   </button></a>
@@ -304,7 +333,8 @@ export const getStaticProps: GetStaticProps = async ({ params,
     }
   );
   const prevSlug = postResponse.results[0] === undefined ? '' : postResponse.results[0].uid;
-  const prevTitle = postResponse.results[0] === undefined ? '' : postResponse.results[0].data.title;
+  const prevTitle = postResponse.results[0] === undefined ? '' :
+    postResponse.results[0].data ? postResponse.results[0].data.title : '';
 
   // busca o próximo post
   postResponse = await prismic.query([
@@ -317,11 +347,13 @@ export const getStaticProps: GetStaticProps = async ({ params,
     }
   );
   const nextSlug = postResponse.results[0] === undefined ? '' : postResponse.results[0].uid;
-  const nextTitle = postResponse.results[0] === undefined ? '' : postResponse.results[0].data.title;
+  const nextTitle = postResponse.results[0] === undefined ? '' :
+    postResponse.results[0].data ? postResponse.results[0].data.title : '';
 
   const post = {
 
     first_publication_date: response.first_publication_date,
+
     last_publication_date: response.last_publication_date,
     prevSlug,
     prevTitle,
@@ -339,7 +371,19 @@ export const getStaticProps: GetStaticProps = async ({ params,
     }
   }
 
-  //console.log("\npost alterado: ", post);
+  if (!prevTitle || prevTitle === '') {
+    delete post.prevSlug;
+    delete post.prevTitle;
+  }
+
+  if (!nextTitle || nextTitle === '') {
+    delete post.nextSlug;
+    delete post.nextTitle;
+  }
+
+  if (!post.last_publication_date) {
+    delete post.last_publication_date;
+  }
 
   return {
     props: {
