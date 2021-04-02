@@ -98,7 +98,8 @@ export default function Home(props: HomeProps) {
               </a></Link>
             <p>
               <FiCalendar className={commonStyles.icon} />
-              <span style={{ textTransform: 'capitalize' }}>
+              {/* <span style={{ textTransform: 'capitalize' }}> */}
+              <span>
                 {post["formatedDate"]}
               </span>
               <FiUser className={commonStyles.icon} />
