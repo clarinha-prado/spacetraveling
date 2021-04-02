@@ -1,7 +1,8 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 
 import { getPrismicClient } from '../../services/prismic';
-import { FiCalendar, FiUser, FiClock } from 'react-icons/fi'
+import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
+import Comentarios from '../../components/Comentarios';
 
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
@@ -10,10 +11,18 @@ import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
 import Header from '../../components/Header';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Prismic from '@prismicio/client';
+import { useEffect, useState, MouseEvent, useRef } from 'react';
+import Utter from '../../components/Utter';
 
 interface Post {
   first_publication_date: string | null;
+  last_publication_date: string | null;
+  prevSlug: string;
+  prevTitle: string;
+  nextSlug: string;
+  nextTitle: string;
   data: {
     title: string;
     banner: {
@@ -30,10 +39,13 @@ interface Post {
 }
 
 interface PostProps {
+  preview: boolean;
   post: Post;
 }
 
 export default function Post(props: PostProps) {
+
+  const [currPage, setCurrPage] = useState('');
 
   // If the page is not yet generated, this will be displayed
   // initially until getStaticProps() finishes running
@@ -46,6 +58,11 @@ export default function Post(props: PostProps) {
   const post = {
 
     first_publication_date: props.post.first_publication_date,
+    last_publication_date: props.post.last_publication_date,
+    prevSlug: props.post.prevSlug,
+    prevTitle: props.post.prevTitle,
+    nextSlug: props.post.nextSlug,
+    nextTitle: props.post.nextTitle,
 
     data: {
       title: props.post.data.title,
@@ -68,7 +85,53 @@ export default function Post(props: PostProps) {
     }
   );
 
+  post.last_publication_date = format(
+    new Date(post.last_publication_date),
+    "d MMM yyyy', às' HH:mm",
+    {
+      locale: ptBR,
+    }
+  );
+
+  function Utterances() {
+    const utter = useRef<HTMLDivElement>();
+
+    useEffect(() => {
+      if (utter) {
+        utter.current.removeChild;
+        const script = document.createElement('script');
+        script.setAttribute("src", "https://utteranc.es/client.js");
+        script.setAttribute("crossorigin", "anonymous");
+        script.setAttribute("async", "true");
+        script.setAttribute("repo", "clarinha-prado/spacetraveling-comments");
+        script.setAttribute("issue-term", "pathname");
+        script.setAttribute("theme", "photon-dark");
+        utter.current.appendChild(script);
+      }
+    }, []);
+
+    return <div ref={utter} />;
+  }
+  /*   
+    useEffect(() => {
+      var container = document.getElementById("inject-comments-for-utterances");
+      var content = container.innerHTML;
+      container.innerHTML = content;
+  
+      // inclui uterance
+      let script = document.createElement("script");
+      let anchor = document.getElementById("inject-comments-for-utterances");
+      script.setAttribute("src", "https://utteranc.es/client.js");
+      script.setAttribute("crossorigin", "anonymous");
+      script.setAttribute("async", "true");
+      script.setAttribute("repo", "clarinha-prado/spacetraveling-comments");
+      script.setAttribute("issue-term", "pathname");
+      script.setAttribute("theme", "photon-dark");
+      anchor.appendChild(script);
+    }, [currPage]); */
+
   function calcularTempoLeitura(content: Post["data"]["content"]) {
+
 
     const qtdPalavras = content.reduce((acc, item) => {
 
@@ -93,46 +156,112 @@ export default function Post(props: PostProps) {
     return Math.ceil(qtdPalavras["soma"] / 200);
   }
 
+  function handleClickNext(event: MouseEvent) {
+    setCurrPage(post.nextSlug);
+  }
+  function handleClickPrev(event: MouseEvent) {
+    setCurrPage(post.prevSlug);
+  }
+
   return (
-    <main className={commonStyles.container}>
-      <Header />
-      <section className={styles.postContainer}>
-        <div className={styles.banner}>
-          <img src={post.data.banner.url} alt={post.data.title} />
-        </div>
-        <div className={styles.preventOverlap}></div>
-        <h1>{post.data.title}</h1>
+    <>
+      <div className={styles.divHeader}>
+        <Header />
+      </div>
+      <div className={styles.banner}>
+        <img src={post.data.banner.url} alt={post.data.title} />
+      </div>
+      <main className={commonStyles.container}>
+        <section className={styles.postContainer}>
+          <div className={styles.preventOverlap}></div>
+          <h1>{post.data.title}</h1>
 
-        <p>
-          <FiCalendar className={commonStyles.icon} />
-          <span style={{ textTransform: 'capitalize' }}>
-            {post.first_publication_date}
-          </span>
-          <FiUser className={commonStyles.icon} />
-          <span style={{ textTransform: 'capitalize' }}>
-            {post.data.author}
-          </span>
-          <FiClock className={commonStyles.icon} />
-          <span>
-            {`${calcularTempoLeitura(post.data.content)} min`}
-          </span>
-        </p>
+          <p>
+            <FiCalendar className={commonStyles.icon} />
+            <span style={{ textTransform: 'capitalize' }}>
+              {post.first_publication_date}
+            </span>
+            <FiUser className={commonStyles.icon} />
+            <span style={{ textTransform: 'capitalize' }}>
+              {post.data.author}
+            </span>
+            <FiClock className={commonStyles.icon} />
+            <span>
+              {`${calcularTempoLeitura(post.data.content)} min`}
+            </span>
+          </p>
+          <p className={styles.modifiedDate}>
+            * editado em {post.last_publication_date}
+          </p>
 
-        <div className={styles.postContent}>
-          {post.data.content.map(item => (
-            <div key={item.heading}>
-              <header>
-                {item.heading}
-              </header>
-              <div dangerouslySetInnerHTML={{ __html: item["formatedText"] }} />
+          <div className={styles.postContent}>
+            {post.data.content.map(item => (
+              <div key={item.heading}>
+                <header>
+                  {item.heading}
+                </header>
+                <div dangerouslySetInnerHTML={{ __html: item["formatedText"] }} />
+              </div>
+            ))}
+          </div>
+          <hr />
+          <nav className={styles.navContainer}>
+
+            <div>
+              <p>{post.prevTitle}</p>
+
+              {post.prevSlug === '' ? '' :
+                <Link href={`/post/${post.prevSlug}`}>
+                  <a><button
+                    type="button"
+                    className={styles.nextPage}
+                    onClick={(e) => handleClickPrev(e)}
+                  >
+                    Post anterior
+              </button></a>
+                </Link>
+              }
             </div>
-          ))}
-        </div>
-      </section>
-    </main >
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-end'
+            }}
+            >
+              <p>{post.nextTitle}</p>
+
+              {post.nextSlug === '' ? '' :
+                <Link href={`/post/${post.nextSlug}`}>
+                  <a><button
+                    type="button"
+                    className={styles.nextPage}
+                    onClick={(e) => handleClickNext(e)}
+                  >
+                    Próximo post
+                  </button></a>
+                </Link>
+              }
+
+            </div>
+          </nav>
+
+          <div className={styles.commentsContainer}>
+            {Utterances()}
+          </div>
+
+          {props.preview ?
+            <Link href="/api/exit-preview">
+              <div className={styles.previewLink}>
+                <a>Sair do modo Preview</a>
+              </div>
+            </Link>
+            : ''}
+        </section>
+      </main >
+    </>
   );
 }
-
 
 // This function gets called at build time
 export async function getStaticPaths() {
@@ -154,32 +283,50 @@ export async function getStaticPaths() {
   return { paths, fallback: true }
 }
 
-export const getStaticProps: GetStaticProps = async ({ params }) => {
+export const getStaticProps: GetStaticProps = async ({ params,
+  preview = false,
+  previewData }) => {
   const { slug } = params;
-
-  // const x = await getStaticPaths();
-
-  // const staticPages = x.paths.find(item => {
-  //   return item.params.slug === slug;
-  // });
 
   let response;
   const prismic = getPrismicClient();
 
-  // if (staticPages === undefined) {
-
-  //   const response1 = await prismic.query([
-  //     Prismic.Predicates.at("my.post.uid", slug)]
-  //   );
-  //   response = response1.results[0];
-
-  // } else {
   response = await prismic.getByUID('post', String(slug), {});
-  // }
+
+  // busca o post anterior
+  let postResponse = await prismic.query([
+    Prismic.predicates.at('document.type', 'post')],
+    {
+      fetch: ['post.title'],
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.first_publication_date]'
+    }
+  );
+  const prevSlug = postResponse.results[0] === undefined ? '' : postResponse.results[0].uid;
+  const prevTitle = postResponse.results[0] === undefined ? '' : postResponse.results[0].data.title;
+
+  // busca o próximo post
+  postResponse = await prismic.query([
+    Prismic.predicates.at('document.type', 'post')],
+    {
+      fetch: ['post.title'],
+      pageSize: 1,
+      after: response.id,
+      orderings: '[document.first_publication_date desc]'
+    }
+  );
+  const nextSlug = postResponse.results[0] === undefined ? '' : postResponse.results[0].uid;
+  const nextTitle = postResponse.results[0] === undefined ? '' : postResponse.results[0].data.title;
 
   const post = {
 
     first_publication_date: response.first_publication_date,
+    last_publication_date: response.last_publication_date,
+    prevSlug,
+    prevTitle,
+    nextSlug,
+    nextTitle,
     ...response,
 
     data: {
@@ -192,9 +339,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     }
   }
 
+  //console.log("\npost alterado: ", post);
+
   return {
     props: {
-      post
+      post,
+      preview
     },
     revalidate: 60 * 60 * 24 // 1 dia
   }
