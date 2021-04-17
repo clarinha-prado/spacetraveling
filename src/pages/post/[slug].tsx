@@ -1,4 +1,4 @@
-import { GetStaticPaths, GetStaticProps } from 'next';
+import { GetStaticProps } from 'next';
 
 import { getPrismicClient } from '../../services/prismic';
 import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
@@ -12,7 +12,7 @@ import Header from '../../components/Header';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Prismic from '@prismicio/client';
-import { useEffect, useState, MouseEvent, useRef } from 'react';
+import { useEffect } from 'react';
 
 interface Post {
   first_publication_date: string | null;
@@ -91,25 +91,6 @@ export default function Post(props: PostProps) {
     }
   ) : '';
 
-  // function Utterances() {
-  //   const utter = useRef<HTMLDivElement>();
-
-  //   useEffect(() => {
-  //     if (utter) {
-  //       utter.current.removeChild;
-  //       const script = document.createElement('script');
-  //       script.setAttribute("src", "https://utteranc.es/client.js");
-  //       script.setAttribute("crossorigin", "anonymous");
-  //       script.setAttribute("async", "true");
-  //       script.setAttribute("repo", "clarinha-prado/spacetraveling-comments");
-  //       script.setAttribute("issue-term", "pathname");
-  //       script.setAttribute("theme", "photon-dark");
-  //       utter.current.appendChild(script);
-  //     }
-  //   }, []);
-
-  //   return <div ref={utter} />;
-  // }
 
   const addUtterancesScript = (
     parentElement,
@@ -117,7 +98,6 @@ export default function Post(props: PostProps) {
     issueTerm,
     isIssueNumber
   ): void => {
-    console.log("\nlabel: " + label + " issueTerm: " + issueTerm + " isIssueNumber: ", isIssueNumber);
     const script = document.createElement('script');
     script.setAttribute('src', 'https://utteranc.es/client.js');
     script.setAttribute('crossorigin', 'anonymous');
